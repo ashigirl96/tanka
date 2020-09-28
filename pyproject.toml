@@ -12,7 +12,7 @@ fix = "pre-commit run --all-files"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-jax = "^0.2.0"
+jax = "^0.2.1"
 jaxlib = "^0.1.55"
 
 [tool.poetry.dev-dependencies]
