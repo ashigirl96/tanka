@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["ashigirl96 <reon@mma.cs.tsukuba.ac.jp>"]
 
+[tool.poetry.scripts]
+fix = "pre-commit run --all-files"
+
 [tool.poetry.dependencies]
 python = "^3.8"
 jax = "^0.2.0"
