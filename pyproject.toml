@@ -3,8 +3,11 @@ name = "jax-playground"
 version = "0.1.0"
 description = ""
 authors = ["ashigirl96 <reon@mma.cs.tsukuba.ac.jp>"]
+packages = [
+    { include="tutorials", from="." }
+]
 
-[tool.poetry.scripts]
+[tool.poe.tasks]
 fix = "pre-commit run --all-files"
 
 [tool.poetry.dependencies]
@@ -20,6 +23,7 @@ mypy = "^0.782"
 isort = "^5.5.3"
 pre-commit = "^2.7.1"
 autoflake = "^1.4"
+poethepoet = "^0.8.0"
 
 [tool.black]
 line-length = 99
