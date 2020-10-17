@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import jax.numpy as np
+import jax.numpy as jnp
 
 from .predule import Function, Variable
 
@@ -16,20 +16,20 @@ def exp(x: Variable) -> Variable:
 
 
 class Square(Function):
-    def forward(self, x: np.ndarray):
+    def forward(self, x: jnp.ndarray):
         return x ** 2
 
-    def backward(self, gy: np.ndarray):
+    def backward(self, gy: jnp.ndarray):
         x = self.input_.data
         gx = 2 * x * gy
         return gx
 
 
 class Exp(Function):
-    def forward(self, x: np.ndarray):
-        return np.exp(x)
+    def forward(self, x: jnp.ndarray):
+        return jnp.exp(x)
 
-    def backward(self, gy: np.ndarray):
+    def backward(self, gy: jnp.ndarray):
         x = self.input_.data
-        gx = np.exp(x) * gy
+        gx = jnp.exp(x) * gy
         return gx

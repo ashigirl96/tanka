@@ -3,16 +3,16 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional
 
-import jax.numpy as np
+import jax.numpy as jnp
 
 
 class Variable:
-    def __init__(self, data: np.ndarray):
-        if data is not None and not isinstance(data, np.ndarray):
+    def __init__(self, data: jnp.ndarray):
+        if data is not None and not isinstance(data, jnp.ndarray):
             raise TypeError(f"{type(data)} is not supported")
 
         self.data = data
-        self.grad: Optional[np.ndarray] = None
+        self.grad: Optional[jnp.ndarray] = None
         self.creator_fn: Optional[Function] = None
 
     def set_creator(self, fn: Function):
@@ -20,7 +20,7 @@ class Variable:
 
     def backward(self) -> None:
         if self.grad is None:
-            self.grad = np.ones_like(self.data)
+            self.grad = jnp.ones_like(self.data)
 
         fns = [self.creator_fn]
         while fns:
@@ -45,9 +45,9 @@ class Function(ABC):
         return output
 
     @abstractmethod
-    def forward(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
         pass
 
     @abstractmethod
-    def backward(self, gy: np.ndarray) -> np.ndarray:
+    def backward(self, gy: jnp.ndarray) -> jnp.ndarray:
         pass
