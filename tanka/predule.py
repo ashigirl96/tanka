@@ -15,13 +15,26 @@ class Variable:
     def set_creator(self, fn: Function):
         self.creator_fn = fn
 
+    def backward(self) -> None:
+        fns = [self.creator_fn]
+        while fns:
+            fn = fns.pop()
+            if fn is None:
+                continue
+            x, y = fn.input_, fn.output
+            x.grad = fn.backward(y.grad)
+
+            if x.creator_fn is not None:
+                fns.append(x.creator_fn)
+
 
 class Function(ABC):
     def __call__(self, input_: Variable) -> Variable:
-        self.input_ = input_
-        x = input_.data
-        y = self.forward(x)
+        y = self.forward(input_.data)
         output = Variable(y)
+
+        self.input_ = input_
+        self.output = output
         output.set_creator(self)
         return output
 
@@ -32,23 +45,3 @@ class Function(ABC):
     @abstractmethod
     def backward(self, gy: np.ndarray) -> np.ndarray:
         pass
-
-
-class Square(Function):
-    def forward(self, x: np.ndarray):
-        return x ** 2
-
-    def backward(self, gy: np.ndarray):
-        x = self.input_.data
-        gx = 2 * x * gy
-        return gx
-
-
-class Exp(Function):
-    def forward(self, x: np.ndarray):
-        return np.exp(x)
-
-    def backward(self, gy: np.ndarray):
-        x = self.input_.data
-        gx = np.exp(x) * gy
-        return gx

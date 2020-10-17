@@ -4,12 +4,16 @@ version = "0.1.0"
 description = ""
 authors = ["ashigirl96 <reon@mma.cs.tsukuba.ac.jp>"]
 packages = [
-    { include="tutorials", from="." },
-    { include="tanka", from="tanka" }
+    { include = "tutorials", from = "." },
+    { include = "tanka", from = "tanka" }
 ]
 
 [tool.poe.tasks]
 fix = "pre-commit run --all-files"
+mypy = "mypy tanka --config-file ./mypy.ini"
+test = "pytest"
+#mksandwich = { script = "my_package.sandwich:build" }                 # python script based task
+#tunnel     = { shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &" }  # shell script based task
 
 [tool.poetry.dependencies]
 python = "^3.8"
