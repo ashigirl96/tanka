@@ -37,3 +37,20 @@ def test_variable_backward():
 
     dydx = grad(ses)(data)
     testing.assert_almost_equal(x.grad, dydx)
+
+
+def test_generations():
+    from tanka.functions import DummyFunction
+
+    generations = [2, 0, 1, 4, 2]
+    fns = []
+    for g in generations:
+        fn = DummyFunction()
+        fn.generation = g
+        fns.append(fn)
+    fns.sort(key=lambda x: x.generation)
+    print(list(map(lambda x: x.generation, fns)))
+
+
+if __name__ == "__main__":
+    test_generations()
