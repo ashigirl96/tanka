@@ -12,11 +12,12 @@ class Config:
 
 
 class Variable:
-    def __init__(self, data: jnp.ndarray):
+    def __init__(self, data: jnp.ndarray, name: str = None):
         if data is not None and not isinstance(data, jnp.ndarray):
             raise TypeError(f"{type(data)} is not supported")
 
         self.data = data
+        self.name = name
         self.grad: Optional[jnp.ndarray] = None
         self.creator_fn: Optional[Function] = None
         # 出力層に近いほど、大きくなる
@@ -73,7 +74,28 @@ class Variable:
         self.grad = None
 
     def __repr__(self):
-        return f"Variable({self.data})"
+        return f"Variable({self.data}, {self.name})"
+
+    def __len__(self):
+        if self.ndim == 0:
+            return 0
+        return len(self.data)
+
+    @property
+    def shape(self):
+        return self.data.shape
+
+    @property
+    def ndim(self):
+        return self.data.ndim
+
+    @property
+    def size(self):
+        return self.data.size
+
+    @property
+    def dtype(self):
+        return self.data.dtype
 
 
 class Function(ABC):

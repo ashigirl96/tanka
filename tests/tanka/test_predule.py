@@ -65,5 +65,42 @@ def test_retain_graph():
     assert x1.grad == jnp.array(1.0)
 
 
+def test_len():
+    x = Variable(jnp.array(1.0))
+    assert len(x) == 0
+    from jax.random import PRNGKey, normal
+
+    shape = (4, 5, 7)
+    x = Variable(normal(PRNGKey(42), shape))
+    assert len(x) == shape[0]
+
+
+def test_shape():
+    x = Variable(jnp.array(1.0))
+    assert x.shape == ()
+
+    from jax.random import PRNGKey, normal
+
+    expect_shape = (3, 5, 7)
+    x = Variable(normal(PRNGKey(42), expect_shape))
+    assert x.shape == expect_shape
+
+
+def test_ndim():
+    assert Variable(jnp.array(1.0)).ndim == 0
+    from jax.random import PRNGKey, normal
+
+    shape = (4, 5, 7)
+    assert Variable(normal(PRNGKey(42), shape)).ndim == len(shape)
+
+
+def test_repr():
+    from jax.random import PRNGKey, normal
+
+    shape = (4, 5, 7)
+    x = str(Variable(normal(PRNGKey(42), shape)))
+    print(x)
+
+
 if __name__ == "__main__":
-    test_retain_graph()
+    test_repr()
