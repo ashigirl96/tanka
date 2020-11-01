@@ -52,5 +52,18 @@ def test_generations():
     print(list(map(lambda x: x.generation, fns)))
 
 
+def test_retain_graph():
+    x0 = Variable(jnp.array(1.0))
+    x1 = Variable(jnp.array(1.0))
+    t = F.add(x0, x1)
+    y = F.add(x0, t)
+    y.backward()
+
+    assert y.grad is None
+    assert t.grad is None
+    assert x0.grad == jnp.array(2.0)
+    assert x1.grad == jnp.array(1.0)
+
+
 if __name__ == "__main__":
-    test_generations()
+    test_retain_graph()

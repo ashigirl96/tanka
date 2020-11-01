@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import weakref
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Union
 
 import jax.numpy as jnp
+
+
+class Config:
+    enable_backprop = True
 
 
 class Variable:
@@ -21,7 +26,7 @@ class Variable:
         self.creator_fn = fn
         self.generation = fn.generation + 1
 
-    def backward(self) -> None:
+    def backward(self, retain_graph=False) -> None:
         # 勾配開始の変数は勾配がないため、1を代入する
         if self.grad is None:
             self.grad = jnp.ones_like(self.data)
@@ -47,7 +52,7 @@ class Variable:
             # x, y = fn.input, fn.output
             # x.grad = fn.backward(y.grad)
             # 多変数の場合
-            gys = [output.grad for output in fn.outputs]
+            gys = [output().grad for output in fn.outputs]
             gxs = fn.backward(*gys)
             if not isinstance(gxs, tuple):
                 gxs = (gxs,)
@@ -60,19 +65,12 @@ class Variable:
                     x.grad = x.grad + gx
                 if x.creator_fn is not None:
                     add_fn(x.creator_fn)
+            if not retain_graph:
+                for output in fn.outputs:
+                    output().grad = None
 
     def zero_grad(self):
         self.grad = None
-        # 一番最初の入力は関数によって生成された変数ではないので、そのままreturnする
-        if self.creator_fn is None:
-            return
-        fns = [self.creator_fn]
-        while fns:
-            fn = fns.pop()
-            for x in fn.inputs:
-                x.grad = None
-                if x.creator_fn is not None:
-                    fns.append(x.creator_fn)
 
     def __repr__(self):
         return f"Variable({self.data})"
@@ -80,7 +78,7 @@ class Variable:
 
 class Function(ABC):
     inputs: Tuple[Variable]
-    outputs: List[Variable]
+    outputs: List[weakref.ReferenceType[Variable]]
     generation: int
 
     def __call__(self, *inputs: Variable) -> Union[Variable, List[Variable]]:
@@ -89,12 +87,18 @@ class Function(ABC):
         if not isinstance(ys, tuple):
             ys = [ys]
         outputs = [Variable(y) for y in ys]
-        # 複数の入力だと、必ず世代が一致するわけではないので、最大のものを取る
-        self.generation = max([input_.generation for input_ in inputs])
-        for output in outputs:
-            output.set_creator(self)
-        self.inputs = inputs
-        self.outputs = outputs
+        # backprop=Falseのとき、すなわち順伝搬のときは関数に入力変数と出力変数の情報を保つ必要がないため、
+        # 以下のように、入力と出力をインスタンス変数として持つ必要がなくなり、順伝搬した直後、参照カウントが0になり、
+        # 変数が開放される
+        if Config.enable_backprop:
+            # 複数の入力だと、必ず世代が一致するわけではないので、最大のものを取る
+            self.generation = max([input_.generation for input_ in inputs])
+            for output in outputs:
+                output.set_creator(self)
+            self.inputs = inputs
+            # Variablesのcreate_fn(Function)とFunctionのoutputs(Variable)が循環参照になるので、
+            # 弱参照を使う. TODO 弱参照の仕組み調べる
+            self.outputs = [weakref.ref(output) for output in outputs]
         return outputs if len(outputs) > 1 else outputs[0]
 
     @abstractmethod
