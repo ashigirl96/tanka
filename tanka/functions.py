@@ -11,6 +11,10 @@ def add(x0: Variable, x1: Variable) -> Variable:
     return Add()(x0, x1)
 
 
+def mul(x0: Variable, x1: Variable) -> Variable:
+    return Mul()(x0, x1)
+
+
 def square(x: Variable) -> Variable:
     return Square()(x)
 
@@ -52,5 +56,16 @@ class Add(Function):
         y = xs[0] + xs[1]
         return y
 
-    def backward(self, *gys: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        return gys[0], gys[0]
+    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        print(f"{gy=}")
+        return gy, gy
+
+
+class Mul(Function):
+    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
+        y = xs[0] * xs[1]
+        return y
+
+    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        return gy * x1, gy * x0

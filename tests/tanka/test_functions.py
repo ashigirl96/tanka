@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-from tanka.functions import add, square
+from tanka.functions import add, mul, square
 from tanka.predule import Variable
 
 
@@ -8,11 +8,28 @@ def test_add():
     x0, x1 = Variable(jnp.array(2.0)), Variable(jnp.array(3.0))
     z = add(square(x0), square(x1))
     z.backward()
-    print(z)
-    print(x0.grad)
-    print(x1.grad)
     assert x0.grad == jnp.array(4.0)
     assert x1.grad == jnp.array(6.0)
+
+
+def test_mul():
+    x0, x1 = Variable(jnp.array(2.0)), Variable(jnp.array(3.0))
+    y0 = mul(x0, x1)
+    y0.backward()
+    assert x0.grad == jnp.array(3.0)
+    assert x1.grad == jnp.array(2.0)
+
+    a = Variable(jnp.array(3.0))
+    b = Variable(jnp.array(2.0))
+    c = Variable(jnp.array(4.0))
+
+    y = mul(add(a, b), c)
+    y.backward()
+
+    assert y.data == jnp.array(20.0)
+    assert c.grad == a.data + b.data
+    assert a.grad == c.data
+    assert b.grad == c.data
 
 
 def test_add_same_variable():
@@ -71,4 +88,4 @@ def test_backward():
 #
 
 if __name__ == "__main__":
-    pass
+    test_mul()

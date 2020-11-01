@@ -73,6 +73,16 @@ class Variable:
     def zero_grad(self):
         self.grad = None
 
+    def __add__(self, other: Variable):
+        from .functions import add
+
+        return add(self, other)
+
+    def __mul__(self, other: Variable):
+        from .functions import mul
+
+        return mul(self, other)
+
     def __repr__(self):
         return f"Variable({self.data}, {self.name})"
 
@@ -99,7 +109,7 @@ class Variable:
 
 
 class Function(ABC):
-    inputs: Tuple[Variable]
+    inputs: Tuple[Variable, ...]
     outputs: List[weakref.ReferenceType[Variable]]
     generation: int
 
@@ -128,5 +138,5 @@ class Function(ABC):
         pass
 
     @abstractmethod
-    def backward(self, *gys: jnp.ndarray) -> Tuple[jnp.ndarray]:
+    def backward(self, *gys: jnp.ndarray) -> Tuple[jnp.ndarray, ...]:
         pass

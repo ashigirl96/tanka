@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import pytest
 from jax import grad
 from numpy import testing
 
@@ -22,11 +21,6 @@ def test_numerical_grad():
     expect = grad(jnp.square)(data)
     # 数値誤差によて、decimalを小さくする必要がある
     testing.assert_almost_equal(result, expect, decimal=2)
-
-
-def test_variable():
-    with pytest.raises(TypeError):
-        Variable(1)
 
 
 def test_variable_backward():
@@ -100,6 +94,18 @@ def test_repr():
     shape = (4, 5, 7)
     x = str(Variable(normal(PRNGKey(42), shape)))
     print(x)
+
+
+def test_variable_mul():
+    x0 = Variable(jnp.array(2.0))
+    x1 = Variable(jnp.array(3.0))
+    x2 = Variable(jnp.array(4.0))
+    y = x0 * x1 + x2
+    assert y.data == jnp.array(10.0)
+    y.backward()
+    assert x0.grad == jnp.array(3.0)
+    assert x1.grad == jnp.array(2.0)
+    assert x2.grad == jnp.array(1.0)
 
 
 if __name__ == "__main__":
