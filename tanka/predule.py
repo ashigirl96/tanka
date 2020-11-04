@@ -70,18 +70,17 @@ class Variable:
                 for output in fn.outputs:
                     output().grad = None
 
-    def zero_grad(self):
-        self.grad = None
-
-    def __add__(self, other: Variable):
-        from .functions import add
-
+    def __add__(self, other):
         return add(self, other)
 
-    def __mul__(self, other: Variable):
-        from .functions import mul
-
+    def __mul__(self, other):
         return mul(self, other)
+
+    def __rmul__(self, other):
+        return mul(self, other)
+
+    def zero_grad(self):
+        self.grad = None
 
     def __repr__(self):
         return f"Variable({self.data}, {self.name})"
@@ -108,12 +107,19 @@ class Variable:
         return self.data.dtype
 
 
+def as_variable(obj: Union[jnp.ndarray, Variable]):
+    if isinstance(obj, Variable):
+        return obj
+    return Variable(obj)
+
+
 class Function(ABC):
-    inputs: Tuple[Variable, ...]
+    inputs: List[Variable]
     outputs: List[weakref.ReferenceType[Variable]]
     generation: int
 
-    def __call__(self, *inputs: Variable) -> Union[Variable, List[Variable]]:
+    def __call__(self, *inputs: Union[Variable, jnp.ndarray]) -> Union[Variable, List[Variable]]:
+        inputs = [as_variable(x) for x in inputs]
         xs = [x.data for x in inputs]
         ys = self.forward(*xs)
         if not isinstance(ys, tuple):
@@ -140,3 +146,67 @@ class Function(ABC):
     @abstractmethod
     def backward(self, *gys: jnp.ndarray) -> Tuple[jnp.ndarray, ...]:
         pass
+
+
+class DummyFunction(Function):
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+        return x
+
+    def backward(self, gy: jnp.ndarray):
+        return gy
+
+
+class Square(Function):
+    def forward(self, x: jnp.ndarray):
+        return x ** 2
+
+    def backward(self, gy: jnp.ndarray):
+        x = self.inputs[0].data
+        gx = 2 * x * gy
+        return gx
+
+
+class Exp(Function):
+    def forward(self, x: jnp.ndarray):
+        return jnp.exp(x)
+
+    def backward(self, gy: jnp.ndarray):
+        x = self.inputs[0].data
+        gx = jnp.exp(x) * gy
+        return gx
+
+
+class Add(Function):
+    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
+        y = xs[0] + xs[1]
+        return y
+
+    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        print(f"{gy=}")
+        return gy, gy
+
+
+class Mul(Function):
+    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
+        y = xs[0] * xs[1]
+        return y
+
+    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        return gy * x1, gy * x0
+
+
+def add(x0: Variable, x1: Variable) -> Variable:
+    return Add()(x0, x1)
+
+
+def mul(x0: Variable, x1: Variable) -> Variable:
+    return Mul()(x0, x1)
+
+
+def square(x: Variable) -> Variable:
+    return Square()(x)
+
+
+def exp(x: Variable) -> Variable:
+    return Exp()(x)

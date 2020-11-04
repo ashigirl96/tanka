@@ -2,9 +2,8 @@ import jax.numpy as jnp
 from jax import grad
 from numpy import testing
 
-import tanka.functions as F
 from tanka.numerical import numerical_grad
-from tanka.predule import Variable
+from tanka.predule import Variable, add, exp, square
 
 
 def ses(x):
@@ -17,7 +16,7 @@ def ses(x):
 def test_numerical_grad():
     data = jnp.array(2.0)
     x = Variable(data)
-    result = numerical_grad(F.square, x)
+    result = numerical_grad(square, x)
     expect = grad(jnp.square)(data)
     # 数値誤差によて、decimalを小さくする必要がある
     testing.assert_almost_equal(result, expect, decimal=2)
@@ -26,31 +25,18 @@ def test_numerical_grad():
 def test_variable_backward():
     data = jnp.array(0.5)
     x = Variable(data)
-    y = F.square(F.exp(F.square(x)))
+    y = square(exp(square(x)))
     y.backward()
 
     dydx = grad(ses)(data)
     testing.assert_almost_equal(x.grad, dydx)
 
 
-def test_generations():
-    from tanka.functions import DummyFunction
-
-    generations = [2, 0, 1, 4, 2]
-    fns = []
-    for g in generations:
-        fn = DummyFunction()
-        fn.generation = g
-        fns.append(fn)
-    fns.sort(key=lambda x: x.generation)
-    print(list(map(lambda x: x.generation, fns)))
-
-
 def test_retain_graph():
     x0 = Variable(jnp.array(1.0))
     x1 = Variable(jnp.array(1.0))
-    t = F.add(x0, x1)
-    y = F.add(x0, t)
+    t = add(x0, x1)
+    y = add(x0, t)
     y.backward()
 
     assert y.grad is None
