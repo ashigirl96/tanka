@@ -94,5 +94,12 @@ def test_variable_mul():
     assert x2.grad == jnp.array(1.0)
 
 
+def test_variable_op_num():
+    assert (Variable(1.0) + 1.0).data == jnp.array(2.0)
+    assert (1.0 + Variable(1.0)).data == jnp.array(2.0)
+    assert (Variable(1.0) * 2.0).data == jnp.array(2.0)
+    assert (2.0 * Variable(1.0)).data == jnp.array(2.0)
+
+
 if __name__ == "__main__":
     test_repr()

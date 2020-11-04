@@ -6,14 +6,17 @@ from typing import List, Optional, Tuple, Union
 
 import jax.numpy as jnp
 
+Num = Union[int, float]
+NumArray = Union[Num, jnp.ndarray]
+
 
 class Config:
     enable_backprop = True
 
 
 class Variable:
-    def __init__(self, data: jnp.ndarray, name: str = None):
-        if data is not None and not isinstance(data, jnp.ndarray):
+    def __init__(self, data: NumArray, name: str = None):
+        if data is not None and not (isinstance(data, jnp.ndarray) or jnp.isscalar(data)):
             raise TypeError(f"{type(data)} is not supported")
 
         self.data = data
@@ -70,15 +73,6 @@ class Variable:
                 for output in fn.outputs:
                     output().grad = None
 
-    def __add__(self, other):
-        return add(self, other)
-
-    def __mul__(self, other):
-        return mul(self, other)
-
-    def __rmul__(self, other):
-        return mul(self, other)
-
     def zero_grad(self):
         self.grad = None
 
@@ -106,11 +100,32 @@ class Variable:
     def dtype(self):
         return self.data.dtype
 
+    def __add__(self, other: VarNum):
+        return add(self, other)
 
-def as_variable(obj: Union[jnp.ndarray, Variable]):
+    def __radd__(self, other: VarNum):
+        return add(self, other)
+
+    def __mul__(self, other: VarNum):
+        return mul(self, other)
+
+    def __rmul__(self, other: VarNum):
+        return mul(self, other)
+
+
+VarNum = Union[Variable, Num, jnp.ndarray]
+
+
+def as_variable(obj: VarNum):
     if isinstance(obj, Variable):
         return obj
     return Variable(obj)
+
+
+def as_array(x: VarNum):
+    if jnp.isscalar(x):
+        return jnp.array(x)
+    return x
 
 
 class Function(ABC):
@@ -124,7 +139,7 @@ class Function(ABC):
         ys = self.forward(*xs)
         if not isinstance(ys, tuple):
             ys = [ys]
-        outputs = [Variable(y) for y in ys]
+        outputs = [Variable(as_array(y)) for y in ys]
         # backprop=Falseのとき、すなわち順伝搬のときは関数に入力変数と出力変数の情報を保つ必要がないため、
         # 以下のように、入力と出力をインスタンス変数として持つ必要がなくなり、順伝搬した直後、参照カウントが0になり、
         # 変数が開放される
@@ -196,17 +211,21 @@ class Mul(Function):
         return gy * x1, gy * x0
 
 
-def add(x0: Variable, x1: Variable) -> Variable:
+def add(x0: Variable, x1: VarNum) -> Variable:
+    x1 = as_array(x1)
     return Add()(x0, x1)
 
 
-def mul(x0: Variable, x1: Variable) -> Variable:
+def mul(x0: Variable, x1: VarNum) -> Variable:
+    x1 = as_array(x1)
     return Mul()(x0, x1)
 
 
-def square(x: Variable) -> Variable:
+def square(x: VarNum) -> Variable:
+    x = as_array(x)
     return Square()(x)
 
 
-def exp(x: Variable) -> Variable:
+def exp(x: VarNum) -> Variable:
+    x = as_array(x)
     return Exp()(x)
