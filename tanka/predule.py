@@ -15,6 +15,9 @@ class Config:
 
 
 class Variable:
+    # 演算子の優先度. jnpだと100. npだと0.0
+    __array_priority__ = 200
+
     def __init__(self, data: NumArray, name: str = None):
         if data is not None and not (isinstance(data, jnp.ndarray) or jnp.isscalar(data)):
             raise TypeError(f"{type(data)} is not supported")

@@ -99,7 +99,13 @@ def test_variable_op_num():
     assert (1.0 + Variable(1.0)).data == jnp.array(2.0)
     assert (Variable(1.0) * 2.0).data == jnp.array(2.0)
     assert (2.0 * Variable(1.0)).data == jnp.array(2.0)
+    assert (1.0 + Variable(1.0) * 2.0).data == jnp.array(3.0)
+
+
+def test_variable_op_ndarray():
+    x = Variable(jnp.array([1.0]))
+    print(jnp.array([2.0]) + x)
 
 
 if __name__ == "__main__":
-    test_repr()
+    test_variable_op_ndarray()
