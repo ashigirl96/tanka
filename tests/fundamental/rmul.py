@@ -14,6 +14,12 @@ class Op:
     def __radd__(self, other):
         return self.name + other
 
+    def __truediv__(self, other):
+        return self.name + other
+
+    def __rtruediv__(self, other):
+        return self.name + other
+
 
 x = Op("1")
 print(x * "2")
@@ -21,3 +27,6 @@ print("2" * x)
 
 print(x + "3")
 print("3" + x)
+
+print(x / "4")
+print("4" / x)

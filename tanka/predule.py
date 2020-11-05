@@ -103,17 +103,35 @@ class Variable:
     def dtype(self):
         return self.data.dtype
 
+    def __neg__(self):
+        return neg(self)
+
     def __add__(self, other: VarNum):
         return add(self, other)
 
+    def __sub__(self, other: VarNum):
+        return sub(self, other)
+
     def __radd__(self, other: VarNum):
         return add(self, other)
+
+    def __rsub__(self, other: VarNum):
+        return sub(self, other)
+
+    def __truediv__(self, other):
+        return div(self, other)
+
+    def __rtruediv__(self, other):
+        return rdiv(self, other)
 
     def __mul__(self, other: VarNum):
         return mul(self, other)
 
     def __rmul__(self, other: VarNum):
         return mul(self, other)
+
+    def __pow__(self, power, modulo=None):
+        return pow_(self, power)
 
 
 VarNum = Union[Variable, Num, jnp.ndarray]
@@ -194,14 +212,42 @@ class Exp(Function):
         return gx
 
 
+class Neg(Function):
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+        return -x
+
+    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, ...]:
+        return -gy
+
+
+class Sub(Function):
+    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
+        y = xs[0] - xs[1]
+        return y
+
+    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        return gy, -gy
+
+
 class Add(Function):
     def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
         y = xs[0] + xs[1]
         return y
 
     def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        print(f"{gy=}")
         return gy, gy
+
+
+class Div(Function):
+    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
+        y = xs[0] / xs[1]
+        return y
+
+    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        gy0 = gy / x1
+        gy1 = gy * (-x0 / x1 ** 2)
+        return gy0, gy1
 
 
 class Mul(Function):
@@ -214,14 +260,50 @@ class Mul(Function):
         return gy * x1, gy * x0
 
 
+class Pow(Function):
+    def __init__(self, c: float):
+        self.c = c
+
+    def forward(self, x: jnp.ndarray):
+        return x ** self.c
+
+    def backward(self, gy: jnp.ndarray):
+        x = self.inputs[0].data
+        gx = (self.c * x ** (self.c - 1)) * gy
+        return gx
+
+
+def neg(x: Variable) -> Variable:
+    return Neg()(x)
+
+
+def sub(x0: Variable, x1: VarNum) -> Variable:
+    x1 = as_array(x1)
+    return Sub()(x0, x1)
+
+
 def add(x0: Variable, x1: VarNum) -> Variable:
     x1 = as_array(x1)
     return Add()(x0, x1)
 
 
+def div(x0: Variable, x1: VarNum) -> Variable:
+    x1 = as_array(x1)
+    return Div()(x0, x1)
+
+
+def rdiv(x0: Variable, x1: VarNum) -> Variable:
+    x1 = as_array(x1)
+    return Div()(x1, x0)
+
+
 def mul(x0: Variable, x1: VarNum) -> Variable:
     x1 = as_array(x1)
     return Mul()(x0, x1)
+
+
+def pow_(x: Variable, c: float) -> Variable:
+    return Pow(c)(x)
 
 
 def square(x: VarNum) -> Variable:

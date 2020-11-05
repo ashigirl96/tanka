@@ -95,10 +95,24 @@ def test_variable_mul():
 
 
 def test_variable_op_num():
+    # neg
+    assert (-Variable(1.0)).data == jnp.array(-1.0)
+    # add
     assert (Variable(1.0) + 1.0).data == jnp.array(2.0)
     assert (1.0 + Variable(1.0)).data == jnp.array(2.0)
+    # sub
+    assert (Variable(1.0) - 1.0).data == jnp.array(0.0)
+    assert (1.0 - Variable(1.0)).data == jnp.array(0.0)
+    # mul
     assert (Variable(1.0) * 2.0).data == jnp.array(2.0)
     assert (2.0 * Variable(1.0)).data == jnp.array(2.0)
+    # div
+    assert (Variable(1.0) / 2.0).data == jnp.array(0.5)
+    assert (2.0 / Variable(1.0)).data == jnp.array(2.0)
+    # pow
+    assert (Variable(2.0) ** 0).data == jnp.array(1.0)
+    assert (Variable(2.0) ** 3).data == jnp.array(8.0)
+
     assert (1.0 + Variable(1.0) * 2.0).data == jnp.array(3.0)
 
 
@@ -108,4 +122,4 @@ def test_variable_op_ndarray():
 
 
 if __name__ == "__main__":
-    test_variable_op_ndarray()
+    test_variable_op_num()
