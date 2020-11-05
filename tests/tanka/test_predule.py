@@ -116,10 +116,22 @@ def test_variable_op_num():
     assert (1.0 + Variable(1.0) * 2.0).data == jnp.array(3.0)
 
 
+def test_sphere():
+    def sphere(x, y):
+        z = x ** 2 + y ** 2
+        return z
+
+    x = Variable(1.0)
+    y = Variable(1.0)
+    z = sphere(x, y)
+    z.backward()
+    print(x.grad, y.grad)
+
+
 def test_variable_op_ndarray():
     x = Variable(jnp.array([1.0]))
     print(jnp.array([2.0]) + x)
 
 
 if __name__ == "__main__":
-    test_variable_op_num()
+    test_sphere()
