@@ -125,7 +125,20 @@ def test_sphere():
     y = Variable(1.0)
     z = sphere(x, y)
     z.backward()
-    print(x.grad, y.grad)
+    assert x.grad == y.grad
+
+
+def test_matyas():
+    def matyas(x, y):
+        z = 0.26 * (x ** 2 + y ** 2) - 0.48 * x * y
+        return z
+
+    x = Variable(1.0)
+    y = Variable(1.0)
+    z = matyas(x, y)
+    z.backward()
+    testing.assert_almost_equal(x.grad, jnp.array(0.04), decimal=2)
+    testing.assert_almost_equal(y.grad, jnp.array(0.04), decimal=2)
 
 
 def test_variable_op_ndarray():
