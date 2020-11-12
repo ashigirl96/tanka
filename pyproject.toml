@@ -24,6 +24,7 @@ chex = "^0.0.2"
 tensorflow-datasets = "^4.1.0"
 tensorflow = "^2.3.1"
 memory-profiler = "^0.58.0"
+matplotlib = "^3.3.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1.2"

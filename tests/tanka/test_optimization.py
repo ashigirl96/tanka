@@ -9,7 +9,7 @@ def test_rosenbrock():
     x0 = Variable(0.0)
     x1 = Variable(2.0)
     lr = 0.001
-    iters = 10_000
+    iters = 10_0
 
     for _ in range(iters):
         print(x0, x1)
