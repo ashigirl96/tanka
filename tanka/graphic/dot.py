@@ -64,7 +64,8 @@ def plot_dot_graph(output: Variable, verbose=True, to_file="graph.png"):
         f.write(dot_graph)
 
     suffix = Path(to_file).suffix[1:]
-    cmd = f"dot {graph_path.as_posix()} -T {suffix} -o {to_file}"
+    saved = tanka_dir / to_file
+    cmd = f"dot {graph_path.as_posix()} -T {suffix} -o {saved.as_posix()}"
     subprocess.run(cmd, shell=True)
 
 
