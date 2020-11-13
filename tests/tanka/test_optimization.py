@@ -18,8 +18,8 @@ def test_rosenbrock():
         x1.zero_grad()
         y.backward()
 
-        x0.data -= lr * x0.grad
-        x1.data -= lr * x1.grad
+        x0.data -= lr * x0.grad.data
+        x1.data -= lr * x1.grad.data
 
 
 if __name__ == "__main__":

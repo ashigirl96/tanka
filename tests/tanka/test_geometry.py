@@ -9,4 +9,4 @@ def test_sin():
     y = sin(x)
     y.backward()
     # d sin(x)/ dx = cos(x)
-    assert y.data == x.grad
+    assert y.data == x.grad.data

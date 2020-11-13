@@ -11,8 +11,8 @@ class Sin(Function):
         return y
 
     def backward(self, *gys: jnp.ndarray) -> Tuple[jnp.ndarray, ...]:
-        x = self.inputs[0].data
-        gx = gys[0] * jnp.cos(x)
+        x = self.inputs[0]
+        gx = gys[0] * cos(x)
         return gx
 
 
@@ -22,8 +22,8 @@ class Cos(Function):
         return y
 
     def backward(self, *gys: jnp.ndarray) -> Tuple[jnp.ndarray, ...]:
-        x = self.inputs[0].data
-        gx = gys[0] * (-jnp.sin(x))
+        x = self.inputs[0]
+        gx = gys[0] * (-sin(x))
         return gx
 
 
@@ -37,4 +37,11 @@ def cos(x: Variable):
 
 if __name__ == "__main__":
     x = Variable(0.0)
-    print(sin(x))
+    y = sin(x)
+    y.backward()
+    g1x = x.grad
+    g1x.backward()
+    g2x = g1x.grad
+    print(y)
+    print(g1x)
+    print(g2x)

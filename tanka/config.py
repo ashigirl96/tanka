@@ -1,12 +1,15 @@
 import contextlib
 
-from .predule import Config
+
+class Config:
+    enable_backprop = True
 
 
 @contextlib.contextmanager
 def using_config(name, value):
     old_value = getattr(Config, name)
     setattr(Config, name, value)
+    # 実行する
     try:
         yield
     finally:

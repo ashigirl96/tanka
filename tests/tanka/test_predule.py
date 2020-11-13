@@ -29,10 +29,10 @@ def test_variable_backward():
     y.backward()
 
     dydx = grad(ses)(data)
-    testing.assert_almost_equal(x.grad, dydx)
+    testing.assert_almost_equal(x.grad.data, dydx)
 
 
-def test_retain_graph():
+def test_retain_grad():
     x0 = Variable(jnp.array(1.0))
     x1 = Variable(jnp.array(1.0))
     t = add(x0, x1)
@@ -41,8 +41,8 @@ def test_retain_graph():
 
     assert y.grad is None
     assert t.grad is None
-    assert x0.grad == jnp.array(2.0)
-    assert x1.grad == jnp.array(1.0)
+    assert x0.grad.data == jnp.array(2.0)
+    assert x1.grad.data == jnp.array(1.0)
 
 
 def test_len():
@@ -89,9 +89,9 @@ def test_variable_mul():
     y = x0 * x1 + x2
     assert y.data == jnp.array(10.0)
     y.backward()
-    assert x0.grad == jnp.array(3.0)
-    assert x1.grad == jnp.array(2.0)
-    assert x2.grad == jnp.array(1.0)
+    assert x0.grad.data == jnp.array(3.0)
+    assert x1.grad.data == jnp.array(2.0)
+    assert x2.grad.data == jnp.array(1.0)
 
 
 def test_variable_op_num():
@@ -125,7 +125,7 @@ def test_sphere():
     y = Variable(1.0)
     z = sphere(x, y)
     z.backward()
-    assert x.grad == y.grad
+    assert x.grad.data == y.grad.data
 
 
 def test_matyas():
@@ -137,8 +137,8 @@ def test_matyas():
     y = Variable(1.0)
     z = matyas(x, y)
     z.backward()
-    testing.assert_almost_equal(x.grad, jnp.array(0.04), decimal=2)
-    testing.assert_almost_equal(y.grad, jnp.array(0.04), decimal=2)
+    testing.assert_almost_equal(x.grad.data, jnp.array(0.04), decimal=2)
+    testing.assert_almost_equal(y.grad.data, jnp.array(0.04), decimal=2)
 
 
 def test_variable_op_ndarray():
@@ -146,5 +146,31 @@ def test_variable_op_ndarray():
     print(jnp.array([2.0]) + x)
 
 
+def test_double_backprop():
+    def fn(x):
+        y = x ** 4 - 2 * x ** 2
+        return y
+
+    x = Variable(2.0)
+    jx = jnp.array(2.0)
+
+    # tankaで計算した一階微分
+    y = fn(x)
+    y.backward(create_graph=True)
+    # jaxで計算した一階微分
+    g1_fn = grad(fn)
+    # 一階微分の比較
+    assert x.grad.data == g1_fn(jx)
+
+    gx = x.grad
+    # 加算されてしまうため、一度勾配を削除し、二階微分を計算
+    x.zero_grad()
+    gx.backward()
+    # jaxで計算した一階微分
+    g2_fn = grad(g1_fn)
+    # 一階微分の比較
+    assert x.grad.data == g2_fn(jx)
+
+
 if __name__ == "__main__":
-    test_sphere()
+    test_double_backprop()

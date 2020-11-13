@@ -6,12 +6,10 @@ from typing import List, Optional, Tuple, Union
 
 import jax.numpy as jnp
 
+from .config import Config, using_config
+
 Num = Union[int, float]
 NumArray = Union[Num, jnp.ndarray]
-
-
-class Config:
-    enable_backprop = True
 
 
 class Variable:
@@ -26,7 +24,7 @@ class Variable:
 
         self.data = data
         self.name = name
-        self.grad: Optional[jnp.ndarray] = None
+        self.grad: Optional[Variable] = None
         self.creator_fn: Optional[Function] = None
         # 出力層に近いほど、大きくなる
         self.generation = 0
@@ -35,10 +33,11 @@ class Variable:
         self.creator_fn = fn
         self.generation = fn.generation + 1
 
-    def backward(self, retain_graph=False) -> None:
+    def backward(self, retain_grad=False, create_graph=False) -> None:
         # 勾配開始の変数は勾配がないため、1を代入する
         if self.grad is None:
-            self.grad = jnp.ones_like(self.data)
+            # self.grad = jnp.ones_like(self.data)
+            self.grad = Variable(jnp.ones_like(self.data))
 
         fns: List[Function] = []
         seen_set = set()
@@ -62,21 +61,24 @@ class Variable:
             # x.grad = fn.backward(y.grad)
             # 多変数の場合
             gys = [output().grad for output in fn.outputs]
-            gxs = fn.backward(*gys)
-            if not isinstance(gxs, tuple):
-                gxs = (gxs,)
-            for x, gx in zip(fn.inputs, gxs):
-                if x.grad is None:
-                    # 一回目のbackward
-                    x.grad = gx
-                else:
-                    # 二回目移行のbackward
-                    x.grad = x.grad + gx
-                # 入力層以外の関数がfnsに追加されていく
-                if x.creator_fn is not None:
-                    add_fn(x.creator_fn)
-            # retain_graph = Falseのとき、中間の変数の勾配を無くす
-            if not retain_graph:
+            # create_graph = Falseのとき、generation, inputs, outputsの保持をしなくなり逆伝搬を無効にする
+            # 詳しくはP.235
+            with using_config("enable_backprop", create_graph):
+                gxs = fn.backward(*gys)
+                if not isinstance(gxs, tuple):
+                    gxs = (gxs,)
+                for x, gx in zip(fn.inputs, gxs):
+                    if x.grad is None:
+                        # 一回目のbackward
+                        x.grad = gx
+                    else:
+                        # 二回目移行のbackward
+                        x.grad = x.grad + gx
+                    # 入力層以外の関数がfnsに追加されていく
+                    if x.creator_fn is not None:
+                        add_fn(x.creator_fn)
+            # retain_grad = Falseのとき、中間の変数の勾配を無くす
+            if not retain_grad:
                 for output in fn.outputs:
                     output().grad = None
 
@@ -184,7 +186,7 @@ class Function(ABC):
         pass
 
     @abstractmethod
-    def backward(self, *gys: jnp.ndarray) -> Tuple[jnp.ndarray, ...]:
+    def backward(self, *gys: jnp.ndarray) -> Variable:
         pass
 
 
@@ -201,7 +203,7 @@ class Square(Function):
         return x ** 2
 
     def backward(self, gy: jnp.ndarray):
-        x = self.inputs[0].data
+        x = self.inputs[0]
         gx = 2 * x * gy
         return gx
 
@@ -211,8 +213,8 @@ class Exp(Function):
         return jnp.exp(x)
 
     def backward(self, gy: jnp.ndarray):
-        x = self.inputs[0].data
-        gx = jnp.exp(x) * gy
+        x = self.inputs[0]
+        gx = jnp.exp(x.data) * gy
         return gx
 
 
@@ -248,7 +250,7 @@ class Div(Function):
         return y
 
     def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        x0, x1 = self.inputs[0], self.inputs[1]
         gy0 = gy / x1
         gy1 = gy * (-x0 / x1 ** 2)
         return gy0, gy1
@@ -260,7 +262,7 @@ class Mul(Function):
         return y
 
     def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        x0, x1 = self.inputs[0], self.inputs[1]
         return gy * x1, gy * x0
 
 
@@ -272,7 +274,7 @@ class Pow(Function):
         return x ** self.c
 
     def backward(self, gy: jnp.ndarray):
-        x = self.inputs[0].data
+        x = self.inputs[0]
         gx = (self.c * x ** (self.c - 1)) * gy
         return gx
 
