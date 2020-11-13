@@ -19,7 +19,9 @@ class Variable:
     __array_priority__ = 200
 
     def __init__(self, data: NumArray, name: str = None):
-        if data is not None and not (isinstance(data, jnp.ndarray) or jnp.isscalar(data)):
+        if jnp.isscalar(data):
+            data = jnp.array(data)
+        if data is not None and not (isinstance(data, jnp.ndarray)):
             raise TypeError(f"{type(data)} is not supported")
 
         self.data = data
@@ -70,8 +72,10 @@ class Variable:
                 else:
                     # 二回目移行のbackward
                     x.grad = x.grad + gx
+                # 入力層以外の関数がfnsに追加されていく
                 if x.creator_fn is not None:
                     add_fn(x.creator_fn)
+            # retain_graph = Falseのとき、中間の変数の勾配を無くす
             if not retain_graph:
                 for output in fn.outputs:
                     output().grad = None
