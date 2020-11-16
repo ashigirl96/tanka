@@ -61,7 +61,7 @@ class Variable:
             # x.grad = fn.backward(y.grad)
             # 多変数の場合
             gys = [output().grad for output in fn.outputs]
-            # create_graph = Falseのとき、generation, inputs, outputsの保持をしなくなり逆伝搬を無効にする
+            # create_graph = Falseのとき、__call__内でgeneration, inputs, outputsの保持をしなくなり逆伝搬を無効にする
             # 詳しくはP.235
             with using_config("enable_backprop", create_graph):
                 gxs = fn.backward(*gys)
