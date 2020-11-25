@@ -5,7 +5,7 @@ description = ""
 authors = ["ashigirl96 <reon@mma.cs.tsukuba.ac.jp>"]
 packages = [
     { include = "tutorials", from = "." },
-    { include = "tanka", from = "tanka" }
+    { include = "tanka", from = "." }
 ]
 
 [tool.poe.tasks]
