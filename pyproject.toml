@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "jax-playground"
+name = "tanka"
 version = "0.1.0"
 description = ""
 authors = ["ashigirl96 <reon@mma.cs.tsukuba.ac.jp>"]
