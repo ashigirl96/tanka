@@ -1,1 +1,1 @@
-from .jax import equal
+from .jax import equal, equal_array

@@ -61,6 +61,8 @@ class Variable:
             # x.grad = fn.backward(y.grad)
             # 多変数の場合
             gys = [output().grad for output in fn.outputs]
+            print(f"{fn.outputs[0]().name=}")
+            print(f"{fn.outputs[0]().grad=}")
             # create_graph = Falseのとき、__call__内でgeneration, inputs, outputsの保持をしなくなり逆伝搬を無効にする
             # 詳しくはP.235
             with using_config("enable_backprop", create_graph):
@@ -86,7 +88,7 @@ class Variable:
         self.grad = None
 
     def __repr__(self):
-        return f"Variable({self.data}, {self.name})"
+        return f"Variable(\n{self.data}, {self.name})"
 
     def __len__(self):
         if self.ndim == 0:
@@ -106,8 +108,18 @@ class Variable:
         return self.data.size
 
     @property
+    def T(self):
+        return transpose(self)
+
+    @property
     def dtype(self):
         return self.data.dtype
+
+    def reshape(self, shape: Shape):
+        return reshape(self, shape)
+
+    def sum(self, axis=None, keepdims=False):
+        return sum_(self, axis, keepdims)
 
     def __neg__(self):
         return neg(self)
@@ -279,6 +291,95 @@ class Pow(Function):
         return gx
 
 
+Shape = Tuple[int, ...]
+
+
+class Reshape(Function):
+    shape: Shape
+
+    def __init__(self, new_shape: Shape):
+        super(Reshape, self).__init__()
+        self.new_shape = new_shape
+
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+        self.shape = x.shape
+        return jnp.reshape(x, self.new_shape)
+
+    def backward(self, gy: jnp.ndarray) -> Variable:
+        gx = reshape(gy, self.shape)
+        return gx
+
+
+class Transpose(Function):
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+        return x.transpose()
+
+    def backward(self, gy: jnp.ndarray) -> Variable:
+        return transpose(gy)
+
+
+class BroadcastTo(Function):
+    shape: Shape
+    x_shape: Shape
+
+    def __init__(self, shape: Shape):
+        self.shape = shape
+
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+        self.x_shape = x.shape
+        y = jnp.broadcast_to(x, self.shape)
+        return y
+
+    def backward(self, gy: jnp.ndarray) -> Variable:
+        pass
+        # gx = sum_to(gy, self.x_shape)
+        # return gx
+
+
+def broadcast_to(x: Variable, shape: Shape) -> Variable:
+    if x.shape == shape:
+        return as_variable(x)
+    return BroadcastTo(shape)(x)
+
+
+class SumTo(Function):
+    shape: Shape
+    x_shape: Shape
+
+    def __init__(self, shape):
+        self.shape = shape
+
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+        pass
+        # self.x_shape = x.shape
+        # y = sum_to(x, self.shape)
+        # return y
+
+    def backward(self, gy: jnp.ndarray) -> Variable:
+        gx = broadcast_to(gy, self.x_shape)
+        return gx
+
+
+class Sum(Function):
+    x_shape: Shape
+
+    def __init__(self, axis, keepdims):
+        super(Sum, self).__init__()
+        self.axis = axis
+        self.keepdims = keepdims
+
+    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+        self.x_shape = x.shape
+        y = x.sum(axis=self.axis, keepdims=self.keepdims)
+        return y
+
+    def backward(self, gy: jnp.ndarray) -> Variable:
+        pass
+        # gy = utils.reshape_sum_backward(gy, self.x_shape, self.axis, self.keepdims)
+        # gx = broadcast_to(gy, self.x_shape)
+        # return gx
+
+
 def neg(x: Variable) -> Variable:
     return Neg()(x)
 
@@ -320,3 +421,17 @@ def square(x: VarNum) -> Variable:
 def exp(x: VarNum) -> Variable:
     x = as_array(x)
     return Exp()(x)
+
+
+def reshape(x: VarNum, shape: Shape):
+    if x.shape == shape:
+        return as_variable(x)
+    return Reshape(shape)(x)
+
+
+def transpose(x: VarNum):
+    return Transpose()(x)
+
+
+def sum_(x: VarNum, axis=None, keepdims=False):
+    return Sum(axis, keepdims)(x)
