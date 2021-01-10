@@ -7,7 +7,8 @@ from typing import List, Optional, Tuple, Union
 import jax.numpy as jnp
 
 import tanka.functions as F
-from tanka.config import Config, using_config
+
+from .config import Config, using_config
 
 Num = Union[int, float]
 NumArray = Union[Num, jnp.ndarray]

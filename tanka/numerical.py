@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-from tanka.predule import Variable
+from .predule import Variable
 
 
 def numerical_grad(fn, x: Variable, eps=1e-4) -> jnp.ndarray:

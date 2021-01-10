@@ -3,7 +3,7 @@ from typing import Tuple
 import jax.numpy as jnp
 from chex import Array
 
-from tanka.predule import Function, Variable, VariableNum, as_array
+from ..predule import Function, Variable, VariableNum, as_array
 
 
 class Square(Function):

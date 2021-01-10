@@ -2,7 +2,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from tanka.predule import Function, Variable
+from ..predule import Function, Variable
 
 
 class Sin(Function):
