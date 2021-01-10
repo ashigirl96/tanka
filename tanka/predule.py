@@ -5,13 +5,13 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Union
 
 import jax.numpy as jnp
+from chex import Array
 
-import tanka.functions as F
-
+from . import functions as F
 from .config import Config, using_config
 
 Num = Union[int, float]
-NumArray = Union[Num, jnp.ndarray]
+NumArray = Union[Num, Array]
 Shape = Tuple[int, ...]
 
 
@@ -22,7 +22,7 @@ class Variable:
     def __init__(self, data: NumArray, name: str = None):
         if jnp.isscalar(data):
             data = jnp.array(data)
-        if data is not None and not (isinstance(data, jnp.ndarray)):
+        if data is not None and not (isinstance(data, Array)):
             raise TypeError(f"{type(data)} is not supported")
 
         self.data = data
@@ -155,7 +155,7 @@ class Variable:
         return F.pow_(self, power)
 
 
-VariableNum = Union[Variable, Num, jnp.ndarray]
+VariableNum = Union[Variable, Num, Array]
 
 
 def as_variable(obj: VariableNum):
@@ -175,7 +175,7 @@ class Function(ABC):
     outputs: List[weakref.ReferenceType[Variable]]
     generation: int
 
-    def __call__(self, *inputs: Union[Variable, jnp.ndarray]) -> Union[Variable, List[Variable]]:
+    def __call__(self, *inputs: Union[Variable, Array]) -> Union[Variable, List[Variable]]:
         inputs = [as_variable(x) for x in inputs]
         xs = [x.data for x in inputs]
         ys = self.forward(*xs)
@@ -197,17 +197,17 @@ class Function(ABC):
         return outputs if len(outputs) > 1 else outputs[0]
 
     @abstractmethod
-    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
+    def forward(self, *xs: Array) -> Array:
         pass
 
     @abstractmethod
-    def backward(self, *gys: jnp.ndarray) -> Variable:
+    def backward(self, *gys: Array) -> Variable:
         pass
 
 
 class DummyFunction(Function):
-    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
+    def forward(self, x: Array) -> Array:
         return x
 
-    def backward(self, gy: jnp.ndarray):
+    def backward(self, gy: Array):
         return gy
