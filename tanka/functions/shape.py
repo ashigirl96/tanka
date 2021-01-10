@@ -46,7 +46,7 @@ class BroadcastTo(Function):
         # return gx
 
 
-def broadcast_to(x: Variable, shape: Shape) -> Variable:
+def broadcast_to(x: VariableNum, shape: Shape) -> Variable:
     if x.shape == shape:
         return as_variable(x)
     return BroadcastTo(shape)(x)
