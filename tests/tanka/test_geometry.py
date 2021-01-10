@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
-from tanka import Variable
 from tanka.functions.geometry import sin
+from tanka.predule import Variable
 
 
 def test_sin():

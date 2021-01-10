@@ -2,8 +2,9 @@ import jax.numpy as jnp
 from jax import grad
 from numpy import testing
 
+from tanka.functions.algebra import add, exp, square
 from tanka.numerical import numerical_grad
-from tanka.predule import Variable, add, exp, square
+from tanka.predule import Variable
 
 
 def ses(x):
