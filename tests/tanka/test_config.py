@@ -1,7 +1,8 @@
 import jax.numpy as jnp
 
 from tanka.config import no_grad, using_config
-from tanka.predule import Variable, exp
+from tanka.functions import exp
+from tanka.predule import Variable
 
 
 def test_using_config():

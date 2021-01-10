@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 import tanka.functions as F
-from tanka import Variable
+from tanka.predule import Variable
 from tanka.testing import equal_array
 
 

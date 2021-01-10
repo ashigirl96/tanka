@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 
-from tanka.predule import Variable, add, mul, square
+from tanka.functions import add, mul, square
+from tanka.predule import Variable
 
 
 def test_add():

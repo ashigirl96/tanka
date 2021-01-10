@@ -6,7 +6,8 @@ from typing import List, Optional, Tuple, Union
 
 import jax.numpy as jnp
 
-from .config import Config, using_config
+import tanka.functions as F
+from tanka.config import Config, using_config
 
 Num = Union[int, float]
 NumArray = Union[Num, jnp.ndarray]
@@ -122,46 +123,46 @@ class Variable:
         return sum_(self, axis, keepdims)
 
     def __neg__(self):
-        return neg(self)
+        return F.neg(self)
 
-    def __add__(self, other: VarNum):
-        return add(self, other)
+    def __add__(self, other: VariableNum):
+        return F.add(self, other)
 
-    def __sub__(self, other: VarNum):
-        return sub(self, other)
+    def __sub__(self, other: VariableNum):
+        return F.sub(self, other)
 
-    def __radd__(self, other: VarNum):
-        return add(self, other)
+    def __radd__(self, other: VariableNum):
+        return F.add(self, other)
 
-    def __rsub__(self, other: VarNum):
-        return sub(self, other)
+    def __rsub__(self, other: VariableNum):
+        return F.sub(self, other)
 
     def __truediv__(self, other):
-        return div(self, other)
+        return F.div(self, other)
 
     def __rtruediv__(self, other):
-        return rdiv(self, other)
+        return F.rdiv(self, other)
 
-    def __mul__(self, other: VarNum):
-        return mul(self, other)
+    def __mul__(self, other: VariableNum):
+        return F.mul(self, other)
 
-    def __rmul__(self, other: VarNum):
-        return mul(self, other)
+    def __rmul__(self, other: VariableNum):
+        return F.mul(self, other)
 
     def __pow__(self, power, modulo=None):
-        return pow_(self, power)
+        return F.pow_(self, power)
 
 
-VarNum = Union[Variable, Num, jnp.ndarray]
+VariableNum = Union[Variable, Num, jnp.ndarray]
 
 
-def as_variable(obj: VarNum):
+def as_variable(obj: VariableNum):
     if isinstance(obj, Variable):
         return obj
     return Variable(obj)
 
 
-def as_array(x: VarNum):
+def as_array(x: VariableNum):
     if jnp.isscalar(x):
         return jnp.array(x)
     return x
@@ -208,87 +209,6 @@ class DummyFunction(Function):
 
     def backward(self, gy: jnp.ndarray):
         return gy
-
-
-class Square(Function):
-    def forward(self, x: jnp.ndarray):
-        return x ** 2
-
-    def backward(self, gy: jnp.ndarray):
-        x = self.inputs[0]
-        gx = 2 * x * gy
-        return gx
-
-
-class Exp(Function):
-    def forward(self, x: jnp.ndarray):
-        return jnp.exp(x)
-
-    def backward(self, gy: jnp.ndarray):
-        x = self.inputs[0]
-        gx = jnp.exp(x.data) * gy
-        return gx
-
-
-class Neg(Function):
-    def forward(self, x: jnp.ndarray) -> jnp.ndarray:
-        return -x
-
-    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, ...]:
-        return -gy
-
-
-class Sub(Function):
-    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
-        y = xs[0] - xs[1]
-        return y
-
-    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        return gy, -gy
-
-
-class Add(Function):
-    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
-        y = xs[0] + xs[1]
-        return y
-
-    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        return gy, gy
-
-
-class Div(Function):
-    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
-        y = xs[0] / xs[1]
-        return y
-
-    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        x0, x1 = self.inputs[0], self.inputs[1]
-        gy0 = gy / x1
-        gy1 = gy * (-x0 / x1 ** 2)
-        return gy0, gy1
-
-
-class Mul(Function):
-    def forward(self, *xs: jnp.ndarray) -> jnp.ndarray:
-        y = xs[0] * xs[1]
-        return y
-
-    def backward(self, gy: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        x0, x1 = self.inputs[0], self.inputs[1]
-        return gy * x1, gy * x0
-
-
-class Pow(Function):
-    def __init__(self, c: float):
-        self.c = c
-
-    def forward(self, x: jnp.ndarray):
-        return x ** self.c
-
-    def backward(self, gy: jnp.ndarray):
-        x = self.inputs[0]
-        gx = (self.c * x ** (self.c - 1)) * gy
-        return gx
 
 
 Shape = Tuple[int, ...]
@@ -380,58 +300,15 @@ class Sum(Function):
         # return gx
 
 
-def neg(x: Variable) -> Variable:
-    return Neg()(x)
-
-
-def sub(x0: Variable, x1: VarNum) -> Variable:
-    x1 = as_array(x1)
-    return Sub()(x0, x1)
-
-
-def add(x0: Variable, x1: VarNum) -> Variable:
-    x1 = as_array(x1)
-    return Add()(x0, x1)
-
-
-def div(x0: Variable, x1: VarNum) -> Variable:
-    x1 = as_array(x1)
-    return Div()(x0, x1)
-
-
-def rdiv(x0: Variable, x1: VarNum) -> Variable:
-    x1 = as_array(x1)
-    return Div()(x1, x0)
-
-
-def mul(x0: Variable, x1: VarNum) -> Variable:
-    x1 = as_array(x1)
-    return Mul()(x0, x1)
-
-
-def pow_(x: Variable, c: float) -> Variable:
-    return Pow(c)(x)
-
-
-def square(x: VarNum) -> Variable:
-    x = as_array(x)
-    return Square()(x)
-
-
-def exp(x: VarNum) -> Variable:
-    x = as_array(x)
-    return Exp()(x)
-
-
-def reshape(x: VarNum, shape: Shape):
+def reshape(x: VariableNum, shape: Shape):
     if x.shape == shape:
         return as_variable(x)
     return Reshape(shape)(x)
 
 
-def transpose(x: VarNum):
+def transpose(x: VariableNum):
     return Transpose()(x)
 
 
-def sum_(x: VarNum, axis=None, keepdims=False):
+def sum_(x: VariableNum, axis=None, keepdims=False):
     return Sum(axis, keepdims)(x)
