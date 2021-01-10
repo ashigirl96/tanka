@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from chex import Array
 
 from ..predule import Function, Shape, Variable, VariableNum, as_variable
+from ..utility import sum_to as _sum_to
 
 
 class Reshape(Function):
@@ -41,9 +42,8 @@ class BroadcastTo(Function):
         return y
 
     def backward(self, gy: Array) -> Variable:
-        pass
-        # gx = sum_to(gy, self.x_shape)
-        # return gx
+        gx = sum_to(gy, self.x_shape)
+        return gx
 
 
 def broadcast_to(x: VariableNum, shape: Shape) -> Variable:
@@ -60,14 +60,19 @@ class SumTo(Function):
         self.shape = shape
 
     def forward(self, x: Array) -> Array:
-        pass
-        # self.x_shape = x.shape
-        # y = sum_to(x, self.shape)
-        # return y
+        self.x_shape = x.shape
+        y = _sum_to(x, self.shape)
+        return y
 
     def backward(self, gy: Array) -> Variable:
         gx = broadcast_to(gy, self.x_shape)
         return gx
+
+
+def sum_to(x: VariableNum, shape: Shape):
+    if x.shape == shape:
+        return as_variable(x)
+    return SumTo(shape)(x)
 
 
 class Sum(Function):

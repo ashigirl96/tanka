@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 
 import tanka.functions as F
+import tanka.utility as utils
 from tanka.predule import Variable
 from tanka.testing import equal_array
 
@@ -47,8 +48,19 @@ def test_transpose():
     print(gx)
 
 
+def test_sum_to():
+    raw_x = jnp.array([[1, 2, 3], [4, 5, 6]], dtype=jnp.float32)
+    raw_y = utils.sum_to(raw_x, (1, 3))
+    expected = jnp.array([[5, 7, 9]], dtype=jnp.float32)
+    equal_array(raw_y, expected)
+    raw_y = utils.sum_to(raw_x, (2, 1))
+    expected = jnp.array([[6], [15]], dtype=jnp.float32)
+    equal_array(raw_y, expected)
+
+
 if __name__ == "__main__":
     # test_tensor_sin()
     # test_sum()
     # test_reshape()
-    test_transpose()
+    # test_transpose()
+    test_sum_to()
