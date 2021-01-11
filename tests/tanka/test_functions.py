@@ -1,7 +1,8 @@
 import jax.numpy as jnp
 
-from tanka.functions import add, mul, square
+from tanka.functions import add, exp, mul, square
 from tanka.predule import Variable
+from tanka.testing import equal_array
 
 
 def test_add():
@@ -87,5 +88,15 @@ def test_backward():
 #
 #
 
+
+def test_exp_square():
+    x = Variable(2)
+    z = exp(x) + square(x)
+    z.backward()
+    print(x.grad.data)
+    print(jnp.array(jnp.exp(2) + 4))
+    equal_array(x.grad.data, jnp.array(jnp.exp(2) + 4))
+
+
 if __name__ == "__main__":
-    test_mul()
+    test_exp_square()

@@ -4,6 +4,9 @@ import jax.numpy as jnp
 from chex import Array
 
 from ..predule import Function, Variable, VariableNum, as_array
+from .shape import sum_to
+
+Shape = Tuple[int, ...]
 
 
 class Square(Function):
@@ -44,12 +47,21 @@ class Sub(Function):
 
 
 class Add(Function):
+    x0_shape: Shape
+    x1_shape: Shape
+
     def forward(self, *xs: Array) -> Array:
+        self.x0_shape = xs[0].shape
+        self.x1_shape = xs[1].shape
         y = xs[0] + xs[1]
         return y
 
     def backward(self, gy: Array) -> Tuple[Array, Array]:
-        return gy, gy
+        gx0, gx1 = gy, gy
+        if self.x0_shape != self.x1_shape:
+            gx0 = sum_to(gy, self.x0_shape)
+            gx1 = sum_to(gy, self.x1_shape)
+        return gx0, gx1
 
 
 class Div(Function):

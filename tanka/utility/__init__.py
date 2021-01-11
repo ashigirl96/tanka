@@ -1,1 +1,1 @@
-from .shape import sum_to
+from .shape import reshape_sum_backward, sum_to

@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from chex import Array
 
 from ..predule import Function, Shape, Variable, VariableNum, as_variable
+from ..utility import reshape_sum_backward
 from ..utility import sum_to as _sum_to
 
 
@@ -89,10 +90,9 @@ class Sum(Function):
         return y
 
     def backward(self, gy: Array) -> Variable:
-        pass
-        # gy = utils.reshape_sum_backward(gy, self.x_shape, self.axis, self.keepdims)
-        # gx = broadcast_to(gy, self.x_shape)
-        # return gx
+        gy = reshape_sum_backward(gy, self.x_shape, self.axis, self.keepdims)
+        gx = broadcast_to(gy, self.x_shape)
+        return gx
 
 
 def reshape(x: VariableNum, shape: Shape):
